@@ -1,3 +1,11 @@
+data/
+*.mp4
+*.jpg
+*.png
+__pycache__/
+*.pyc
+outputs/*.csv
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
