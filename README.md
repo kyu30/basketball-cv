@@ -76,3 +76,4 @@ Full analysis lives in `notebooks/01_eda.ipynb`; summary below. Of the 80 basket
 
 Expected neural approach for Check-in 2: Fine-tune YOLOv8 (n or s variant, sized for 8GB VRAM) for player detection on the SportsMOT basketball subset, paired with a tracking algorithm (starting with IoU-based association/SORT) to link detections into consistent player tracks across frames. This constitutes the “real neural network baseline,” since the detector is trained, not used off-the-shelf and results are evaluated with HOTA/MOTA/IDF1 against SportsMOT’s ground truth
 
+[Check-in 1 Video](https://youtu.be/KG7r7ordQW4)
