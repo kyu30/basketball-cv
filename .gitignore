@@ -5,6 +5,9 @@ data/
 __pycache__/
 *.pyc
 outputs/*.csv
+runs/
+logs/
+*.pt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

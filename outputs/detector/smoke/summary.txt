@@ -1,0 +1,8 @@
+run: C:\Users\keith\Downloads\basketball-cv\runs\detect\smoke
+epochs completed: 3
+wall time: 184s (61s/epoch incl. val)
+best.pt: C:\Users\keith\Downloads\basketball-cv\runs\detect\smoke\weights\best.pt (6.2 MB)
+val mAP50: 0.9619
+val mAP50-95: 0.6724
+val precision: 0.9509
+val recall: 0.8980

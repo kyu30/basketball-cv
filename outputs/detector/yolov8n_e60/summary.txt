@@ -1,0 +1,8 @@
+run: C:\Users\keith\Downloads\basketball-cv\runs\detect\yolov8n_e60
+epochs completed: 52
+wall time: 2070s (40s/epoch incl. val)
+best.pt: C:\Users\keith\Downloads\basketball-cv\runs\detect\yolov8n_e60\weights\best.pt (6.2 MB)
+val mAP50: 0.9745
+val mAP50-95: 0.7296
+val precision: 0.9631
+val recall: 0.9328

@@ -25,6 +25,29 @@ def pairwise_iou(boxes: np.ndarray) -> np.ndarray:
     return np.where(union > 0, inter_area / union, 0.0)
 
 
+def iou_matrix(boxes_a: np.ndarray, boxes_b: np.ndarray) -> np.ndarray:
+    """IoU between two sets of boxes in (x1, y1, x2, y2) format.
+
+    Returns an (len(a), len(b)) matrix. Either set may be empty.
+    """
+    if len(boxes_a) == 0 or len(boxes_b) == 0:
+        return np.zeros((len(boxes_a), len(boxes_b)), dtype=float)
+    area_a = (boxes_a[:, 2] - boxes_a[:, 0]) * (boxes_a[:, 3] - boxes_a[:, 1])
+    area_b = (boxes_b[:, 2] - boxes_b[:, 0]) * (boxes_b[:, 3] - boxes_b[:, 1])
+
+    inter_x1 = np.maximum(boxes_a[:, 0][:, None], boxes_b[:, 0][None, :])
+    inter_y1 = np.maximum(boxes_a[:, 1][:, None], boxes_b[:, 1][None, :])
+    inter_x2 = np.minimum(boxes_a[:, 2][:, None], boxes_b[:, 2][None, :])
+    inter_y2 = np.minimum(boxes_a[:, 3][:, None], boxes_b[:, 3][None, :])
+
+    inter_w = np.clip(inter_x2 - inter_x1, 0, None)
+    inter_h = np.clip(inter_y2 - inter_y1, 0, None)
+    inter_area = inter_w * inter_h
+
+    union = area_a[:, None] + area_b[None, :] - inter_area
+    return np.where(union > 0, inter_area / union, 0.0)
+
+
 def max_offdiag_iou(boxes: np.ndarray) -> float:
     """Max pairwise IoU among boxes, excluding self-overlap. 0 if <2 boxes."""
     n = len(boxes)

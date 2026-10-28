@@ -1,0 +1,5 @@
+COCO zero-shot baseline (no fine-tuning)
+model: yolov8n.pt (person class only)
+split: test (4191 images, 39655 gt boxes)
+AP50: 0.6982
+at conf>=0.25:  precision: 0.5318  recall: 0.8229  F1: 0.6460
