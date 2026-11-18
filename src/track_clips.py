@@ -25,11 +25,12 @@ import numpy as np
 from ultralytics import YOLO
 
 from data_loading import get_basketball_clips, load_seqinfo
-from sort_tracker import IouTracker
+from sort_tracker import IouTracker, AppearanceTracker
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_WEIGHTS = PROJECT_ROOT / "runs" / "detect" / "yolov8n_clipsplit" / "weights" / "best.pt"
 DETS_DIR = PROJECT_ROOT / "outputs" / "tracking" / "dets"
+EMBEDS_DIR = PROJECT_ROOT / "outputs" / "tracking" / "embeds"
 TRACKING_DIR = PROJECT_ROOT / "outputs" / "tracking"
 
 MOT_ROW = "{frame},{tid},{x:.2f},{y:.2f},{w:.2f},{h:.2f},{conf:.4f},-1,-1,-1"
@@ -52,6 +53,46 @@ def load_cached_dets(clip_name: str) -> dict[int, tuple[np.ndarray, np.ndarray]]
         xyxy[:, 3] += xyxy[:, 1]  # h -> y2
         out[frame] = (xyxy, arr[:, 4])
     return out
+
+
+def load_reid_dets(clip_name: str, embeds_name: str, dets_name: str = "dets"):
+    """{frame: (xyxy, confs, embs)} with embeddings row-aligned to the dets file."""
+    path = TRACKING_DIR / dets_name / f"{clip_name}.txt"
+    if not path.exists():
+        raise SystemExit(f"No cached detections at {path} - run src/detect_clips.py first.")
+    emb_path = EMBEDS_DIR / embeds_name / f"{clip_name}.npy"
+    if not emb_path.exists():
+        raise SystemExit(f"No embeddings at {emb_path} - run src/embed_dets.py --name {embeds_name} first.")
+    embs = np.load(emb_path).astype(np.float32)
+    by_frame = defaultdict(list)
+    for i, line in enumerate(path.read_text().splitlines()):
+        frame, x, y, w, h, conf = line.split(",")
+        by_frame[int(frame)].append((float(x), float(y), float(w), float(h), float(conf), i))
+    out = {}
+    for frame, rows in by_frame.items():
+        arr = np.array([r[:5] for r in rows], dtype=float)
+        xyxy = arr[:, :4].copy()
+        xyxy[:, 2] += xyxy[:, 0]
+        xyxy[:, 3] += xyxy[:, 1]
+        rowidx = [r[5] for r in rows]
+        out[frame] = (xyxy, arr[:, 4], embs[rowidx])
+    return out
+
+
+def track_reid(clip_path: Path, args) -> list[str]:
+    info = load_seqinfo(clip_path)
+    dets = load_reid_dets(info["name"], args.embeds, args.dets_name)
+    tracker = AppearanceTracker(alpha=args.alpha, iou_thresh=args.iou_thresh, app_thresh=args.app_thresh,
+                                gate_px=args.gate_px, max_age=args.max_age, min_hits=args.min_hits,
+                                det_thresh=args.det_thresh, motion=args.motion)
+    lines = []
+    for frame in range(1, info["seqlength"] + 1):
+        xyxy, confs, embs = dets.get(frame, (np.zeros((0, 4)), np.zeros(0), np.zeros((0, 512))))
+        for tid, box, conf in tracker.update(xyxy, confs, embs):
+            x1, y1, x2, y2 = box
+            lines.append(MOT_ROW.format(frame=frame, tid=tid, x=x1, y=y1,
+                                        w=x2 - x1, h=y2 - y1, conf=conf))
+    return lines
 
 
 def track_iou(clip_path: Path, args) -> list[str]:
@@ -91,20 +132,32 @@ def track_bytetrack(model: YOLO, clip_path: Path, args) -> list[str]:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--tracker", choices=["iou", "bytetrack"], required=True)
+    parser.add_argument("--tracker", choices=["iou", "bytetrack", "reid"], required=True)
     parser.add_argument("--weights", default=str(DEFAULT_WEIGHTS), help="detector (bytetrack only)")
     parser.add_argument("--conf", type=float, default=0.1, help="detector conf floor (bytetrack)")
     parser.add_argument("--imgsz", type=int, default=640)
     parser.add_argument("--device", default="0")
-    # iou-tracker knobs
+    parser.add_argument("--name", default=None, help="output subdir under outputs/tracking/ (default: tracker name)")
+    # iou / reid tracker knobs
     parser.add_argument("--iou-thresh", type=float, default=0.3)
     parser.add_argument("--max-age", type=int, default=30)
     parser.add_argument("--min-hits", type=int, default=3)
     parser.add_argument("--det-thresh", type=float, default=0.25,
-                        help="conf threshold the iou tracker applies to cached detections")
+                        help="conf threshold the tracker applies to cached detections")
+    # reid-only knobs
+    parser.add_argument("--embeds", default="reid", help="embeds/<name> subdir to read (reid tracker)")
+    parser.add_argument("--dets-name", default="dets", help="dets subdir to read (reid tracker)")
+    parser.add_argument("--alpha", type=float, default=0.1,
+                        help="weight on IoU vs appearance; 1.0 = pure IoU (appearance-off ablation)")
+    parser.add_argument("--app-thresh", type=float, default=0.25, help="appearance distance to accept a rescue match")
+    parser.add_argument("--gate-px", type=float, default=1e9,
+                        help="max center distance for a match (large = effectively off; a tight gate hurts)")
+    parser.add_argument("--motion", action="store_true",
+                        help="constant-velocity box prediction before IoU (appearance + motion, BoT-SORT-style)")
     args = parser.parse_args()
 
-    out_dir = TRACKING_DIR / args.tracker / "data"
+    out_name = args.name or args.tracker
+    out_dir = TRACKING_DIR / out_name / "data"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     model = YOLO(args.weights) if args.tracker == "bytetrack" else None
@@ -114,6 +167,8 @@ def main():
         info = load_seqinfo(clip_path)
         if args.tracker == "iou":
             lines = track_iou(clip_path, args)
+        elif args.tracker == "reid":
+            lines = track_reid(clip_path, args)
         else:
             lines = track_bytetrack(model, clip_path, args)
         out = out_dir / f"{info['name']}.txt"

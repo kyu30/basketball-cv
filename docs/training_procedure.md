@@ -130,6 +130,23 @@ val). Full numbers in `outputs/detector/yolov8n_clipsplit/summary.txt`.
 | precision| 0.9123 | 0.9443 |
 | recall   | 0.8458 | 0.8904 |
 
+### Fine-tuned YOLOv8s (`yolov8s_clipsplit`) — larger variant
+
+Same data and recipe, `yolov8s.pt` init, batch 8. Held-out test vs YOLOv8n:
+
+| Metric   | YOLOv8n (test) | YOLOv8s (test) |
+|----------|----------------|----------------|
+| mAP50    | 0.9539 | **0.9611** |
+| mAP50-95 | 0.6687 | **0.6907** |
+| precision| 0.9443 | 0.9384 |
+| recall   | 0.8904 | **0.9030** |
+
+YOLOv8s modestly improves mAP and recall (notably mAP50-95 / localization). Its
+effect on *tracking* was non-trivial and is covered in `tracking.md` / the CI3
+write-up: at a fixed detection threshold it looked worse (more false positives from
+its different confidence calibration), but with the operating threshold retuned it
+gives the best tracking result overall.
+
 The held-out **test** split scores *higher* than val here: that is expected, not
 a leak. val is a **single** source video (`v_-6Os86HzwCs`) deliberately chosen as
 the hardest early-stop set — one court, uniform and camera — so it lower-bounds

@@ -227,3 +227,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+*.pth
+*.pth.tar
+outputs/tracking/embeds/
+outputs/tracking/dets/

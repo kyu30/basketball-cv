@@ -1,0 +1,9 @@
+run: C:\Users\keith\Downloads\basketball-cv\runs\detect\yolov8s_clipsplit
+epochs completed: 17
+wall time: 661s (39s/epoch incl. val)
+best.pt: C:\Users\keith\Downloads\basketball-cv\runs\detect\yolov8s_clipsplit\weights\best.pt (22.5 MB)
+metric             val   test (held-out)
+mAP50           0.9347            0.9611
+mAP50-95        0.6381            0.6907
+precision       0.9239            0.9384
+recall          0.8479            0.9030

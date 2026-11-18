@@ -1,0 +1,7 @@
+run: C:\Users\keith\Downloads\basketball-cv\runs\detect\ball_smoke
+wall: 60s
+best: C:\Users\keith\Downloads\basketball-cv\runs\detect\ball_smoke\weights\best.pt
+val mAP50: 0.6231
+val mAP50-95: 0.2407
+val precision: 0.7924
+val recall: 0.5753

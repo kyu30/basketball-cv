@@ -26,11 +26,12 @@ DEFAULT_WEIGHTS = PROJECT_ROOT / "runs" / "detect" / "yolov8n_clipsplit" / "weig
 DETS_DIR = PROJECT_ROOT / "outputs" / "tracking" / "dets"
 
 
-def detect_clip(model: YOLO, clip_path: Path, conf: float, imgsz: int, device: str, batch: int) -> Path:
+def detect_clip(model: YOLO, clip_path: Path, conf: float, imgsz: int, device: str, batch: int,
+                dets_dir: Path) -> Path:
     info = load_seqinfo(clip_path)
     frames = sorted((clip_path / "img1").glob("*.jpg"))
-    DETS_DIR.mkdir(parents=True, exist_ok=True)
-    out = DETS_DIR / f"{info['name']}.txt"
+    dets_dir.mkdir(parents=True, exist_ok=True)
+    out = dets_dir / f"{info['name']}.txt"
 
     rows = []
     # Chunked prediction: passing a whole clip at once OOMs an 8 GB GPU.
@@ -57,16 +58,18 @@ def main():
     parser.add_argument("--imgsz", type=int, default=640)
     parser.add_argument("--device", default="0")
     parser.add_argument("--batch", type=int, default=16)
+    parser.add_argument("--dets-name", default="dets", help="output subdir under outputs/tracking/ (e.g. dets_s)")
     args = parser.parse_args()
 
     if not Path(args.weights).exists():
         raise SystemExit(f"Weights not found: {args.weights} - train the detector first.")
 
+    dets_dir = PROJECT_ROOT / "outputs" / "tracking" / args.dets_name
     model = YOLO(args.weights)
     clips = get_basketball_clips("val")  # official val = our held-out tracking test set
-    print(f"Detecting {len(clips)} test clips (conf>={args.conf}) -> {DETS_DIR}")
+    print(f"Detecting {len(clips)} test clips (conf>={args.conf}) -> {dets_dir}")
     for clip_path in clips:
-        out = detect_clip(model, clip_path, args.conf, args.imgsz, args.device, args.batch)
+        out = detect_clip(model, clip_path, args.conf, args.imgsz, args.device, args.batch, dets_dir)
         n = sum(1 for _ in out.open())
         print(f"  {out.name}: {n} detections")
 

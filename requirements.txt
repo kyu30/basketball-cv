@@ -70,3 +70,9 @@ scipy==1.15.3
 # Tracking metrics (HOTA/MOTA/IDF1); not on PyPI, install from GitHub:
 # pip install git+https://github.com/JonathonLuiten/TrackEval
 trackeval @ git+https://github.com/JonathonLuiten/TrackEval.git
+
+# Re-ID (Check-in 3): person-ReID backbone + weight download
+torchreid==0.2.5
+gdown==6.5.1
+tensorboard==2.21.0
+easyocr==1.7.2

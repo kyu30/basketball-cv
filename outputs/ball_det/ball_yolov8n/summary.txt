@@ -1,0 +1,7 @@
+run: C:\Users\keith\Downloads\basketball-cv\runs\detect\ball_yolov8n
+wall: 499s
+best: C:\Users\keith\Downloads\basketball-cv\runs\detect\ball_yolov8n\weights\best.pt
+val mAP50: 0.8888
+val mAP50-95: 0.3992
+val precision: 0.9552
+val recall: 0.7808
